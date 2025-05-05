@@ -1,0 +1,112 @@
+package elite;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Scanner;
+
+public class Currency_Cinverter02 {
+
+	public static void main(String[] args) {
+		        HashMap<Integer, String> currencyCodes = new HashMap<>();
+		        currencyCodes.put(1, "USD");
+		        currencyCodes.put(2, "CAD");
+		        currencyCodes.put(3, "EUR");
+		        currencyCodes.put(4, "BDT"); // Fixed currency code for Bangladeshi Taka
+		        currencyCodes.put(5, "INR");
+
+		        Scanner sc = new Scanner(System.in);
+		        System.out.println("Welcome to the Currency Converter!");
+
+		        // Selecting FROM currency
+		        System.out.println("Select the currency to convert **FROM** (1-5): ");
+		        displayOptions();
+		        int from = validateInput(sc);
+		        String fromCode = currencyCodes.get(from);
+
+		        // Selecting TO currency
+		        System.out.println("Select the currency to convert **TO** (1-5): ");
+		        displayOptions();
+		        int to = validateInput(sc);
+		        String toCode = currencyCodes.get(to);
+
+		        // Amount to convert
+		        System.out.println("Enter the amount you wish to convert: ");
+		        double amount = sc.nextDouble();
+
+		        // Fetch and display conversion rate
+		        try {
+		            try {
+						sendHttpGETRequest(fromCode, toCode, amount);
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		        } catch (IOException e) {
+		            System.out.println("Error fetching exchange rate.");
+		        }
+
+		        System.out.println("Thank you for using the Currency Converter!");
+		    }
+
+		    // Function to display currency options
+		    private static void displayOptions() {
+		        System.out.println("1: USD (US Dollar)");
+		        System.out.println("2: CAD (Canadian Dollar)");
+		        System.out.println("3: EUR (Euro)");
+		        System.out.println("4: BDT (Bangladeshi Taka)");
+		        System.out.println("5: INR (Indian Rupee)");
+		    }
+
+		    // Function to validate input
+		    private static int validateInput(Scanner sc) {
+		        int choice;
+		        do {
+		            choice = sc.nextInt();
+		            if (choice < 1 || choice > 5) {
+		                System.out.println("Invalid choice! Select a valid option (1-5).");
+		                displayOptions();
+		            }
+		        } while (choice < 1 || choice > 5);
+		        return choice;
+		    }
+
+		    // Function to call API for exchange rates
+		    private static void sendHttpGETRequest(String fromCode, String toCode, double amount) throws IOException, JSONException {
+		        DecimalFormat f = new DecimalFormat("0.00");
+
+		        // FIXED: Correct URL format, now requires an API key
+		        String API_KEY = "YOUR_API_KEY"; // Replace with actual API key
+		        String GET_URL = "https://api.exchangerate-api.com/v4/latest/" + fromCode;
+
+		        URL url = new URL(GET_URL);
+		        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		        connection.setRequestMethod("GET");
+		        int responseCode = connection.getResponseCode();
+
+		        if (responseCode == HttpURLConnection.HTTP_OK) {
+		            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		            String inputLine;
+		            StringBuilder response = new StringBuilder();
+
+		            while ((inputLine = in.readLine()) != null) {
+		                response.append(inputLine);
+		            }
+		            in.close();
+
+		            JSONObject obj = new JSONObject(response.toString());
+		            double exchangeRate = obj.getJSONObject("rates").getDouble(toCode);
+
+		            System.out.println(amount + " " + fromCode + " = " + f.format(amount * exchangeRate) + " " + toCode);
+		        } else {
+		            System.out.println("GET request failed. Response code: " + responseCode);
+		        }
+		    }
+		
+	}
+
